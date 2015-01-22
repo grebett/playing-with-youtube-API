@@ -1,12 +1,4 @@
-// enum
-var playerState = {
-  unstarted: -1,
-  stopped:0,
-  playing:1,
-  pause:2,
-  buffering:3,
-  waiting:5
-};
+var VERBOSE = false;
 var playerStateDisplay = ['arrêtée', 'en lecture', 'en pause', 'en mémoire tampon', ' ', 'en file d\'attente'];
 
 // async script loading hack (see http://stackoverflow.com/questions/1834077/which-browsers-support-script-async-async/1834129#1834129)
@@ -36,15 +28,16 @@ function onYouTubeIframeAPIReady() {
 
 // events handled by the onReady function
 function onPlayerReady(event) {
-  console.log(event);
   event.target.playVideo();
 }
 function onPlayerStateChange(event) {
-  var i = event.data;
-  if (i !== -1)
-    console.log(playerStateDisplay[i]);
-  else
-    console.log('non commencée');
+  if (VERBOSE) {
+    var i = event.data;
+    if (i !== -1)
+      console.log(playerStateDisplay[i]);
+    else
+      console.log('non commencée');
+  }
 }
 
 // ui events
@@ -72,9 +65,36 @@ function uiEventsHandler() {
 }
 
 function main() {
+  // stock that data elsewhere
+  var content = [{
+    displayTime: 3,
+    eraseTime: 4,
+    text: 'This is my first comment, youhou !'
+  }, {
+    displayTime: 7,
+    eraseTime: 9,
+    text: 'And another one !'
+  }];
+
+  // contentZone
+  var contentZone = document.getElementById('contentZone');
+
   asyncScriptLoader('https://www.youtube.com/iframe_api', function () {
     uiEventsHandler();
-  });
+
+    // each second, check for current time value and check in the content if there is a message to display or erase
+    window.setInterval(function () {
+      if (typeof player.getCurrentTime == 'function') {
+        var time = Math.ceil(player.getCurrentTime()); // perhaps use Math.floor instead of Math.ceil
+        content.forEach(function (c) {
+          if (time === c.eraseTime)
+            contentZone.firstChild.nodeValue = '';
+          else if (time === c.displayTime)
+            contentZone.firstChild.nodeValue = c.text;
+        });
+      }
+    }, 1000);
+  }); /* asyncScriptLoader */
 }
 
 main();
